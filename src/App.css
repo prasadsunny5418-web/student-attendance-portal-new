@@ -1168,5 +1168,71 @@ body {
     font-size: 13px;
   }
 }
+/* --- Download PDF Button Style --- */
+.pro-pdf-download-btn {
+  background-color: #4f46e5;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+}
+
+.pro-pdf-download-btn:hover {
+  background-color: #4338ca;
+}
+
+/* --- Performance Chart Card Styles --- */
+.chart-card-container {
+  margin-top: 20px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.chart-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.chart-card-title {
+  margin: 0;
+  color: #1e293b;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.chart-subject-badge {
+  font-size: 12px;
+  background: #e0e7ff;
+  color: #4f46e5;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.chart-responsive-wrapper {
+  width: 100%;
+  height: 300px;
+}
+/* --- Recharts Tooltip Custom Style --- */
+.custom-tooltip-style {
+  background: #1e293b !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  border: none !important;
+}
+/*--- buttons(view attendance, download pdf) gap---*/
+.action-buttons-group {
+  display: flex;
+  gap: 12px;        
+  margin-top: 16px;
+  align-items: center;
+}
 
 

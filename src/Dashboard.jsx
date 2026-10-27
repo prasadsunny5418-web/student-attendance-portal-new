@@ -4,24 +4,30 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import jsPDF from "jspdf";
 
 export default function Dashboard({ user, onLogout }) {
+  // Check kar rahe hain ki logged-in user student hai ya teacher
   const isStudent = user.role === "student";
 
+  // Form states initialization
   const [studentName, setStudentName] = useState(isStudent ? user.studentName : "");
   const [rollNumber, setRollNumber] = useState(isStudent ? user.rollNumber : "");
   const [password] = useState(isStudent ? user.password || "" : "");
   const [subject, setSubject] = useState("");
   
+  // Default date range set ki gayi hai filtering ke liye
   const [startDate, setStartDate] = useState("2026-08-01");
   const [endDate, setEndDate] = useState("2026-08-10");
 
+  // Students data aur search results state
   const [students, setStudents] = useState(getInitialStudents);
   const [foundStudent, setFoundStudent] = useState(null);
   const [rangeRecords, setRangeRecords] = useState([]);
   
+  // Inline editing states (Teacher mode ke liye)
   const [editingDate, setEditingDate] = useState(null);
   const [editAttendance, setEditAttendance] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Function: Student aur attendance records ko search aur filter karne ke liye
   const searchAttendance = () => {
     if (!studentName || !rollNumber || !subject || (!startDate && !endDate)) {
       setErrorMessage("Please fill Student Name, Roll Number, Subject, and at least one Date.");
@@ -36,6 +42,7 @@ export default function Dashboard({ user, onLogout }) {
       return;
     }
 
+    // Students array mein se matching student find kar rahe hain
     const student = students.find(
       (s) =>
         s.studentName.toLowerCase().trim() === studentName.toLowerCase().trim() &&
@@ -53,6 +60,7 @@ export default function Dashboard({ user, onLogout }) {
     const allAttendanceDates = student.attendance || {};
     const filteredRecords = [];
 
+    // Selected date range ke mutabiq records filter karna
     Object.keys(allAttendanceDates).forEach((d) => {
       let isMatch = false;
       if (startDate && !endDate && d === startDate) isMatch = true;
@@ -80,6 +88,7 @@ export default function Dashboard({ user, onLogout }) {
     setErrorMessage("");
   };
 
+  // Function: Specific date ki attendance ko edit karke save karna aur state/localStorage update karna
   const saveAttendanceForDate = (dateToUpdate) => {
     if (!foundStudent || !subject || !dateToUpdate || !editAttendance) return;
 
@@ -91,6 +100,7 @@ export default function Dashboard({ user, onLogout }) {
       return;
     }
 
+    // Present aur Absent ke change hone par lectures count adjust karna (+1 ya -1)
     let change = 0;
     if (oldAttendance === "Present" && newAttendance === "Absent") change = -1;
     if (oldAttendance === "Absent" && newAttendance === "Present") change = 1;
@@ -119,6 +129,7 @@ export default function Dashboard({ user, onLogout }) {
         return updated;
       });
 
+      // Data ko persistent banane ke liye localStorage mein save kar rahe hain
       localStorage.setItem("portal_students_data", JSON.stringify(updatedStudents));
       return updatedStudents;
     });
@@ -133,6 +144,7 @@ export default function Dashboard({ user, onLogout }) {
     setEditingDate(null);
   };
 
+  // Derived State Function: Selected subject ke total lectures, percentages aur status calculate karne ke liye
   const getSubjectStats = () => {
     if (!foundStudent || !subject) return null;
     
@@ -153,7 +165,7 @@ export default function Dashboard({ user, onLogout }) {
 
   const stats = getSubjectStats();
 
-  // 📊 4 Parameters in Single Chart Data Preparation
+  // Recharts Bar Chart ke liye data preparation (Attended, Total, Present, Absent counts)
   const presentCount = rangeRecords.filter(r => r.status === "Present").length;
   const absentCount = rangeRecords.filter(r => r.status === "Absent").length;
 
@@ -164,7 +176,7 @@ export default function Dashboard({ user, onLogout }) {
     { name: "Absent", count: absentCount, color: "#ef4444" }          
   ] : [];
 
-  // 📥 Download PDF Report Function using jsPDF
+  // Function: Client-side PDF report generate karne ke liye jsPDF ka use
   const downloadPDFReport = () => {
     if (!foundStudent || !stats) return;
 
@@ -198,6 +210,8 @@ export default function Dashboard({ user, onLogout }) {
 
   return (
     <div className="portal-layout">
+      
+      {/* SIDEBAR COMPONENT: Navigation panel and user profile */}
       <aside className="portal-sidebar">
         <div className="sidebar-brand">
           <div className="brand-logo">🎓</div>
@@ -214,6 +228,7 @@ export default function Dashboard({ user, onLogout }) {
           </a>
         </div>
 
+        {/* Dynamic User Profile info based on role */}
         <div className="sidebar-user">
           <div className="avatar">
             {isStudent ? user.studentName.charAt(0).toUpperCase() : "T"}
@@ -225,7 +240,10 @@ export default function Dashboard({ user, onLogout }) {
         </div>
       </aside>
 
+      {/* MAIN CONTENT AREA */}
       <main className="portal-main">
+        
+        {/* Header Section */}
         <header className="portal-header">
           <div className="header-title">
             <h1>Attendance Overview</h1>
@@ -240,6 +258,8 @@ export default function Dashboard({ user, onLogout }) {
         </header>
 
         <div className="portal-body">
+          
+          {/* SEARCH CRITERIA CARD: Filters input fields */}
           <div className="pro-card search-card">
             <div className="card-top">
               <h3>Search Criteria</h3>
@@ -290,22 +310,28 @@ export default function Dashboard({ user, onLogout }) {
               </div>
             </div>
 
+            {/* Error Message Display */}
             {errorMessage && <div className="pro-alert-error">{errorMessage}</div>}
 
-            <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
+            <div className="action-buttons-group">
               <button onClick={searchAttendance} className="pro-btn-primary" style={{ flex: 1 }}>
                 View Attendance
               </button>
+              
+              {/* Conditional PDF Download Button */}
               {foundStudent && stats && (
-                <button onClick={downloadPDFReport} style={{ backgroundColor: "#4f46e5", color: "#fff", padding: "10px 20px", borderRadius: "8px", border: "none", cursor: "pointer", fontWeight: "600" }}>
+                <button onClick={downloadPDFReport} className="pro-pdf-download-btn">
                   📥 Download PDF Report
                 </button>
               )}
             </div>
           </div>
 
+          {/* RESULTS SECTION & ANALYTICS: Renders only when records are found */}
           {foundStudent && rangeRecords.length > 0 && stats && (
             <div className="pro-results">
+              
+              {/* Attendance Table View */}
               <div className="pro-card table-card">
                 <div className="table-responsive">
                   <table className="pro-table">
@@ -316,6 +342,7 @@ export default function Dashboard({ user, onLogout }) {
                         <th>Subject</th>
                         <th>Date</th>
                         <th>Attendance</th>
+                        {/* Show actions column only for teachers */}
                         {!isStudent && <th>Actions</th>}
                       </tr>
                     </thead>
@@ -344,6 +371,8 @@ export default function Dashboard({ user, onLogout }) {
                                 </select>
                               )}
                             </td>
+                            
+                            {/* Inline Edit Buttons for Teacher */}
                             {!isStudent && (
                               <td>
                                 {!isRowEditing ? (
@@ -357,7 +386,7 @@ export default function Dashboard({ user, onLogout }) {
                                     ✏️ Edit
                                   </button>
                                 ) : (
-                                  <div style={{ display: "flex", gap: "6px" }}>
+                                  <div className="edit-actions-flex">
                                     <button onClick={() => setEditingDate(null)} className="cancel-edit-btn">
                                       Cancel
                                     </button>
@@ -376,6 +405,7 @@ export default function Dashboard({ user, onLogout }) {
                 </div>
               </div>
 
+              {/* Metrics Summary Row */}
               <div className="attendance-analysis-heading" style={{ marginTop: "30px" }}>
                 <h3>Attendance Analysis & Performance</h3>
                 <p>Overall performance breakdown and metrics</p>
@@ -421,22 +451,23 @@ export default function Dashboard({ user, onLogout }) {
                 </div>
               </div>
 
-              {/* 📊 Complete Performance Overview Bar Graph Component */}
-              <div className="pro-card" style={{ marginTop: "20px", padding: "20px", background: "#fff", borderRadius: "12px", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-                  <h4 style={{ margin: 0, color: "#1e293b", fontSize: "18px", fontWeight: "600" }}>Complete Performance Overview</h4>
-                  <span style={{ fontSize: "12px", background: "#e0e7ff", color: "#4f46e5", padding: "4px 10px", borderRadius: "20px", fontWeight: "600" }}>
+              {/* Recharts Bar Chart Component */}
+              <div className="pro-card chart-card-container">
+                <div className="chart-header-flex">
+                  <h4 className="chart-card-title">Complete Performance Overview</h4>
+                  <span className="chart-subject-badge">
                     {subject} Subject
                   </span>
                 </div>
                 
-                <div style={{ width: "100%", height: "300px" }}>
+                <div className="chart-responsive-wrapper">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                       <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 13 }} axisLine={{ stroke: "#cbd5e1" }} />
                       <YAxis allowDecimals={false} tick={{ fill: "#64748b", fontSize: 13 }} axisLine={{ stroke: "#cbd5e1" }} />
                       <Tooltip 
+                        wrapperClassName="custom-tooltip-style"
                         contentStyle={{ background: "#1e293b", color: "#fff", borderRadius: "8px", border: "none" }}
                         formatter={(value) => [`${value} Count`, "Value"]}
                       />
